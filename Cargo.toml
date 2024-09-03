@@ -1,0 +1,9 @@
+[package]
+name = "lithrez"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+from-to-repr = { version = "0.2", features = ["from_to_other"] }
+smallvec = { version = "1.13", features = ["const_generics"] }
