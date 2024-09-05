@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::io::{self, Cursor, Read, Seek, SeekFrom};
 
@@ -269,6 +270,14 @@ pub enum Entry {
     Resource(Resource),
     Directory(Directory),
 }
+impl Entry {
+    pub fn name(&self) -> Cow<str> {
+        match self {
+            Self::Resource(res) => Cow::Owned(format!("{}.{}", res.name.as_str(), res.extension.as_str())),
+            Self::Directory(dir) => Cow::Borrowed(dir.name.as_str()),
+        }
+    }
+}
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Resource {
@@ -355,7 +364,7 @@ fn read_directory_entries_recursive<R: Read + Seek>(reader: &mut R, position: u3
                 let mut extension_bytes = [0u8; 4];
                 buf_reader.read_exact(&mut extension_bytes)?;
                 extension_bytes.reverse();
-                let extension_slice = without_trailing_zero_bytes(&extension_bytes);
+                let extension_slice = without_leading_zero_bytes(&extension_bytes);
                 let extension = iso88591_bytes_to_string(&extension_slice);
 
                 let num_keys = buf_reader.read_u32_le()?;
@@ -394,6 +403,14 @@ fn without_trailing_zero_bytes(value: &[u8]) -> &[u8] {
     let mut ret = value;
     while ret.len() > 0 && ret[ret.len() - 1] == 0x00 {
         ret = &ret[..ret.len() - 1];
+    }
+    ret
+}
+
+fn without_leading_zero_bytes(value: &[u8]) -> &[u8] {
+    let mut ret = value;
+    while ret.len() > 0 && ret[0] == 0x00 {
+        ret = &ret[1..];
     }
     ret
 }
